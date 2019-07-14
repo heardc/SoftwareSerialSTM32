@@ -1,5 +1,5 @@
 /**********************************************************************
-SoftSerialSTM32.cpp (based on NewSoftSerial.cpp) - 
+SoftwareSerial.cpp (based on NewSoftSerial.cpp) - 
 Multi-instance software serial library for Arduino/Wiring
 -- Compiles for STM32Arduino and AVR Arduino with no modifications
 -- Hacks for 72MHz STM32F1 and timing calibrations by Ron Curry
@@ -48,7 +48,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include <avr/interrupt.h>
 #include <avr/pgmspace.h>
 #include <Arduino.h>
-#include "SoftSerialSTM32.h"
+#include "SoftwareSerial.h"
 
 #ifndef __STM32F1__
 
@@ -104,10 +104,10 @@ typedef struct _DELAY_TABLE
 //
 // Statics
 //
-SoftSerialSTM32 *SoftSerialSTM32::active_object = 0;
-char SoftSerialSTM32::_receive_buffer[_SS_MAX_RX_BUFF]; 
-volatile uint8_t SoftSerialSTM32::_receive_buffer_tail = 0;
-volatile uint8_t SoftSerialSTM32::_receive_buffer_head = 0;
+SoftwareSerial *SoftwareSerial::active_object = 0;
+char SoftwareSerial::_receive_buffer[_SS_MAX_RX_BUFF]; 
+volatile uint8_t SoftwareSerial::_receive_buffer_tail = 0;
+volatile uint8_t SoftwareSerial::_receive_buffer_head = 0;
 
 //
 // Debugging
@@ -156,7 +156,7 @@ inline void DebugPulse(uint8_t pin, uint8_t count)
 
 // delay overhead is ~+1.487usec. one digit = ~137ns.
 // Therefore, total delay is ~ (delay * 0.137us) + 1.487us
-inline void SoftSerialSTM32::tunedDelay(uint32_t delay) { 
+inline void SoftwareSerial::tunedDelay(uint32_t delay) { 
   static uint32_t i;
   for (i = 0; i < delay; i++) {
     asm volatile(
@@ -166,7 +166,7 @@ inline void SoftSerialSTM32::tunedDelay(uint32_t delay) {
   
   #else
 
-inline void SoftSerialSTM32::tunedDelay(uint16_t delay) { 
+inline void SoftwareSerial::tunedDelay(uint16_t delay) { 
     _delay_loop_2(delay); // 16.375 us @ 16mhz
 
   #endif
@@ -176,7 +176,7 @@ inline void SoftSerialSTM32::tunedDelay(uint16_t delay) {
 
 // This function sets the current object as the "listening"
 // one and returns true if it replaces another 
-bool SoftSerialSTM32::listen()
+bool SoftwareSerial::listen()
 {
   if (!_rx_delay_stopbit)
     return false;
@@ -192,7 +192,7 @@ bool SoftSerialSTM32::listen()
 
     #if defined (__STM32F1__)
 
-    attachInterrupt(_receivePin, SoftSerialSTM32::handle_interrupt, FALLING);
+    attachInterrupt(_receivePin, SoftwareSerial::handle_interrupt, FALLING);
 
     #else
 
@@ -208,7 +208,7 @@ bool SoftSerialSTM32::listen()
 
 
 // Stop listening. Returns true if we were actually listening.
-bool SoftSerialSTM32::stopListening()
+bool SoftwareSerial::stopListening()
 {
   if (active_object == this)
   {
@@ -233,7 +233,7 @@ bool SoftSerialSTM32::stopListening()
 //
 // The receive routine called by the interrupt handler
 //
-void SoftSerialSTM32::recv()
+void SoftwareSerial::recv()
 {
 
   #ifndef __STM32F1__
@@ -348,7 +348,7 @@ void SoftSerialSTM32::recv()
 }
 
 
-uint8_t SoftSerialSTM32::rx_pin_read()
+uint8_t SoftwareSerial::rx_pin_read()
 {
   #if defined (__STM32F1__)
     return digitalRead(_receivePin);
@@ -363,7 +363,7 @@ uint8_t SoftSerialSTM32::rx_pin_read()
 //
 
 /* static */
-inline void SoftSerialSTM32::handle_interrupt()
+inline void SoftwareSerial::handle_interrupt()
 {
   if (active_object)
   {
@@ -378,7 +378,7 @@ inline void SoftSerialSTM32::handle_interrupt()
 
 ISR(PCINT0_vect)
 {
-  SoftSerialSTM32::handle_interrupt();
+  SoftwareSerial::handle_interrupt();
 }
 #endif
 
@@ -406,7 +406,7 @@ ISR(PCINT3_vect, ISR_ALIASOF(PCINT0_vect));
 //
 // Constructor
 //
-SoftSerialSTM32::SoftSerialSTM32(uint8_t receivePin, uint8_t transmitPin, bool inverse_logic /* = false */) : 
+SoftwareSerial::SoftwareSerial(uint8_t receivePin, uint8_t transmitPin, bool inverse_logic /* = false */) : 
   _rx_delay_centering(0),
   _rx_delay_intrabit(0),
   _rx_delay_stopbit(0),
@@ -422,13 +422,13 @@ SoftSerialSTM32::SoftSerialSTM32(uint8_t receivePin, uint8_t transmitPin, bool i
 //
 // Destructor
 //
-SoftSerialSTM32::~SoftSerialSTM32()
+SoftwareSerial::~SoftwareSerial()
 {
   end();
 }
 
 
-void SoftSerialSTM32::setTX(uint8_t tx)
+void SoftwareSerial::setTX(uint8_t tx)
 {
   // First write, then set output. If we do this the other way around,
   // the pin would be output low for a short while before switching to
@@ -448,7 +448,7 @@ void SoftSerialSTM32::setTX(uint8_t tx)
 }
 
 
-void SoftSerialSTM32::setRX(uint8_t rx)
+void SoftwareSerial::setRX(uint8_t rx)
 {
   pinMode(rx, INPUT);
   if (!_inverse_logic)
@@ -457,7 +457,7 @@ void SoftSerialSTM32::setRX(uint8_t rx)
 
   #if defined (__STM32F1__)
 
-    attachInterrupt(_receivePin, SoftSerialSTM32::handle_interrupt, FALLING);
+    attachInterrupt(_receivePin, SoftwareSerial::handle_interrupt, FALLING);
 
   #else
 
@@ -470,7 +470,7 @@ void SoftSerialSTM32::setRX(uint8_t rx)
 
 #ifndef __STM32F1__
 
-  uint16_t SoftSerialSTM32::subtract_cap(uint16_t num, uint16_t sub) {
+  uint16_t SoftwareSerial::subtract_cap(uint16_t num, uint16_t sub) {
     if (num > sub)
       return num - sub;
     else
@@ -484,7 +484,7 @@ void SoftSerialSTM32::setRX(uint8_t rx)
 // Public methods
 //
 
-void SoftSerialSTM32::begin(long speed)
+void SoftwareSerial::begin(long speed)
 {
   _rx_delay_centering = _rx_delay_intrabit = _rx_delay_stopbit = _tx_delay = 0;
 
@@ -505,7 +505,7 @@ void SoftSerialSTM32::begin(long speed)
       }
     }
 
-    attachInterrupt(_receivePin, SoftSerialSTM32::handle_interrupt, FALLING);
+    attachInterrupt(_receivePin, SoftwareSerial::handle_interrupt, FALLING);
 
   #else
 
@@ -585,13 +585,13 @@ void SoftSerialSTM32::begin(long speed)
 }
 
 
-void SoftSerialSTM32::setRxIntMsk(bool enable)
+void SoftwareSerial::setRxIntMsk(bool enable)
 {
 
   #if defined (__STM32F1__)
 
     if (enable)
-      attachInterrupt(_receivePin, SoftSerialSTM32::handle_interrupt, FALLING);
+      attachInterrupt(_receivePin, SoftwareSerial::handle_interrupt, FALLING);
     else
       detachInterrupt(_receivePin);
 
@@ -607,14 +607,14 @@ void SoftSerialSTM32::setRxIntMsk(bool enable)
 }
 
 
-void SoftSerialSTM32::end()
+void SoftwareSerial::end()
 {
   stopListening();
 }
 
 
 // Read data from buffer
-int SoftSerialSTM32::read()
+int SoftwareSerial::read()
 {
   if (!isListening())
     return -1;
@@ -630,7 +630,7 @@ int SoftSerialSTM32::read()
 }
 
 
-int SoftSerialSTM32::available()
+int SoftwareSerial::available()
 {
   if (!isListening())
     return 0;
@@ -639,7 +639,7 @@ int SoftSerialSTM32::available()
 }
 
 
-size_t SoftSerialSTM32::write(uint8_t b)
+size_t SoftwareSerial::write(uint8_t b)
 {
   if (_tx_delay == 0) {
     setWriteError();
@@ -735,7 +735,7 @@ size_t SoftSerialSTM32::write(uint8_t b)
 }
 
 
-void SoftSerialSTM32::flush()
+void SoftwareSerial::flush()
 {
   if (!isListening())
     return;
@@ -753,7 +753,7 @@ void SoftSerialSTM32::flush()
 }
 
 
-int SoftSerialSTM32::peek()
+int SoftwareSerial::peek()
 {
   if (!isListening())
     return -1;

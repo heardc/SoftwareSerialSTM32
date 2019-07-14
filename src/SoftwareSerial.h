@@ -1,5 +1,5 @@
 /*
-SoftSerialST32.cpp (based on NewSoftSerial.cpp) - 
+SoftwareSerial.cpp (based on NewSoftSerial.cpp) - 
 Multi-instance software serial library for Arduino/Wiring
 -- Compiles for STM32Arduino and AVR Arduino with no modifications
 -- Hacks for 72MHz STM32F1 and timing calibrations by Ron Curry
@@ -33,8 +33,8 @@ The latest version of this library can always be found at
 https://github.com/wingspinner
 */
 
-#ifndef SoftSerialSTM32_h
-#define SoftSerialSTM32_h
+#ifndef SoftwareSerial_h
+#define SoftwareSerial_h
 
 #include <inttypes.h>
 #include <Stream.h>
@@ -49,7 +49,7 @@ https://github.com/wingspinner
 #endif
 #define _SSSTM32_VERSION   1.1  // Library Version
 
-class SoftSerialSTM32 : public Stream
+class SoftwareSerial : public Stream
 {
 private:
   // per object data
@@ -88,7 +88,7 @@ private:
   static char _receive_buffer[_SS_MAX_RX_BUFF]; 
   static volatile uint8_t _receive_buffer_tail;
   static volatile uint8_t _receive_buffer_head;
-  static SoftSerialSTM32 *active_object;
+  static SoftwareSerial *active_object;
 
   // private methods
   void recv() __attribute__((__always_inline__));
@@ -115,8 +115,8 @@ private:
 
 public:
   // public methods
-  SoftSerialSTM32(uint8_t receivePin, uint8_t transmitPin, bool inverse_logic = false);
-  ~SoftSerialSTM32();
+  SoftwareSerial(uint8_t receivePin, uint8_t transmitPin, bool inverse_logic = false);
+  ~SoftwareSerial();
 
   static int      library_version() { return _SSSTM32_VERSION; }  
   void            begin(long speed);
